@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% load tz dashboard %}
+{% block title %}{% if conversation %}{{ conversation.title }} | {% endif %}نکسا{% endblock %}
+{% block layout %}
+{% get_current_timezone as zone %}
+<div class="app" data-zone="{{ zone }}">
+  <aside class="rail" id="rail" aria-label="گفتگوها">
+    <div class="rail-head">
+      <a class="brand" href="{% url 'chat' %}">{% include "brand.html" %}</a>
+      <button class="icon-button rail-close" type="button" data-rail-toggle aria-label="بستن فهرست گفتگوها">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <a class="new-chat" href="{% url 'chat' %}">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>گفتگوی جدید
+    </a>
+    {% if history %}
+    <label class="rail-search">
+      <span class="visually-hidden">جست‌وجو در گفتگوها</span>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5"/></svg>
+      <input type="search" placeholder="جست‌وجو در گفتگوها" data-history-filter>
+    </label>
+    {% endif %}
+    <nav class="history" aria-label="تاریخچه گفتگو">
+      {% for label, items in history %}
+      <section data-history-group>
+        <h2>{{ label }}</h2>
+        <ul>
+          {% for item in items %}
+          <li><a href="{% url 'conversation' item.pk %}" dir="auto" {% if item.pk == conversation.pk %}aria-current="page"{% endif %}>{{ item.title }}</a></li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% empty %}
+      <p class="history-empty">هنوز گفتگویی ندارید. اولین پرسش، گفتگوی تازه‌ای می‌سازد.</p>
+      {% endfor %}
+    </nav>
+    {% include "quota.html" %}
+    <div class="account">
+      <span class="avatar" aria-hidden="true">{{ user.get_username|slice:":1"|upper }}</span>
+      <span class="account-name" dir="auto">{{ user.get_username }}</span>
+      {% if user.is_staff %}<a class="icon-button" href="{% url 'admin:index' %}" aria-label="پنل مدیریت" title="پنل مدیریت"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 10h16M10 10v10"/></svg></a>{% endif %}
+      <form action="{% url 'logout' %}" method="post">{% csrf_token %}
+        <button class="icon-button" aria-label="خروج از حساب" title="خروج"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 5H6a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h4M14 8l-4 4 4 4M10 12h10"/></svg></button>
+      </form>
+    </div>
+  </aside>
+  <div class="rail-scrim" data-rail-toggle hidden></div>
+
+  <main class="stage">
+    <header class="stage-head">
+      <button class="icon-button rail-open" type="button" data-rail-toggle aria-controls="rail" aria-label="فهرست گفتگوها">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+      </button>
+      <h1 dir="auto">{% if conversation %}{{ conversation.title }}{% else %}گفتگوی جدید{% endif %}</h1>
+      <span class="pill">{{ mode }}</span>
+      {% if question.model and not question.model.is_hidden %}
+      <label class="model-select"><span class="visually-hidden">مدل</span>{{ question.model }}</label>
+      {% elif default_model %}
+      <span class="model-name">{{ default_model }}</span>
+      {% endif %}
+      {% if conversation %}
+      <form action="{% url 'delete-conversation' conversation.pk %}" method="post" data-confirm="این گفتگو حذف شود؟">{% csrf_token %}
+        <button class="icon-button" aria-label="حذف گفتگو" title="حذف گفتگو"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 11v6M14 11v6M6 7l1 12h10l1-12M9 7V4h6v3"/></svg></button>
+      </form>
+      {% endif %}
+    </header>
+
+    <div class="thread" data-thread>
+      <div class="thread-inner">
+        {% for turn in turns %}
+        <article class="turn">
+          <div class="bubble" dir="auto">{{ turn.question|linebreaksbr }}</div>
+          <div class="reply {% if turn.status == 'failed' %}is-failed{% elif turn.status == 'pending' %}is-pending{% endif %}">
+            <span class="reply-mark" aria-hidden="true">{% include "brand-mark.html" %}</span>
+            <div class="reply-body">
+              {% if turn.status == "done" %}
+              <div class="prose" dir="auto" data-answer>{{ turn.answer|markdown }}</div>
+              {% if turn.sources %}
+              <ul class="sources" aria-label="منابع">
+                {% for source in turn.sources %}<li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/></svg>{{ source }}</li>{% endfor %}
+              </ul>
+              {% endif %}
+              <div class="reply-tools">
+                <button class="tool" type="button" data-copy hidden>
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg><span>کپی</span>
+                </button>
+                <time datetime="{{ turn.created_at|date:'c' }}">{{ turn.created_at|date:"Y/m/d H:i" }}</time>
+              </div>
+              {% elif turn.status == "failed" %}
+              <p role="note"><strong>پاسخ داده نشد.</strong> {{ turn.answer }}</p>
+              <small>این پرسش از سهمیه شما کم نشد.</small>
+              {% else %}
+              <p>این پرسش هنوز در حال پردازش است. چند لحظه بعد صفحه را تازه کنید.</p>
+              {% endif %}
+            </div>
+          </div>
+        </article>
+        {% empty %}
+        <section class="welcome">
+          <span class="welcome-mark" aria-hidden="true">{% include "brand-mark.html" %}</span>
+          <h2>چه پرسشی دارید؟</h2>
+          <p>پاسخ بر اساس دانش منتشرشده سازمان و سیاست حساب شما داده می‌شود.{% if default_model %} مدل پیش‌فرض: {{ default_model }}.{% endif %}</p>
+        </section>
+        {% endfor %}
+        <template data-turn-template>
+          <article class="turn">
+            <div class="bubble" dir="auto" data-turn-question></div>
+            <div class="reply is-pending" data-turn-reply>
+              <span class="reply-mark" aria-hidden="true">{% include "brand-mark.html" %}</span>
+              <div class="reply-body">
+                <div class="reply-wait" role="status"><span class="typing" aria-hidden="true"><i></i><i></i><i></i></span> در حال آماده‌سازی پاسخ…</div>
+                <div class="prose is-streaming" dir="auto" data-answer aria-live="polite" hidden></div>
+                <ul class="sources" aria-label="منابع" data-turn-sources hidden></ul>
+                <p class="reply-error" role="alert" data-turn-error hidden></p>
+                <div class="reply-tools" data-turn-tools hidden>
+                  <button class="tool" type="button" data-copy hidden>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg><span>کپی</span>
+                  </button>
+                  <span data-turn-note></span>
+                </div>
+              </div>
+            </div>
+          </article>
+        </template>
+        <template data-source-template><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/></svg><span></span></li></template>
+      </div>
+    </div>
+
+    <div class="dock">
+      <div class="flashes" data-flashes>
+        {% for message in messages %}<p class="flash {{ message.tags }}" role="{% if message.level_tag == 'error' %}alert{% else %}status{% endif %}">{{ message }}</p>{% endfor %}
+      </div>
+      <form class="composer" id="composer" method="post" data-composer data-stream-url="{% url 'stream' %}" data-conversation="{{ conversation.pk|default:'' }}">{% csrf_token %}
+        <input type="hidden" name="action" value="ask">
+        {% if question.model.is_hidden %}{{ question.model }}{% endif %}
+        <label class="visually-hidden" for="{{ question.question.id_for_label }}">پرسش</label>
+        {{ question.question }}
+        <div class="composer-bar">
+          {% if can_upload %}
+          <button class="icon-button" type="button" data-upload-trigger aria-label="بارگذاری فایل متنی برای پایگاه دانش" title="بارگذاری فایل (TXT یا MD تا ۲۵۶ کیلوبایت)">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12.5 12.6 20a5 5 0 0 1-7.1-7.1l8.2-8.2a3.3 3.3 0 0 1 4.7 4.7l-8.2 8.2a1.7 1.7 0 0 1-2.4-2.4L15.4 8"/></svg>
+          </button>
+          {% endif %}
+          <span class="composer-hint">Enter برای ارسال · Shift+Enter برای خط جدید</span>
+          <button class="send" aria-label="ارسال پرسش" data-send>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+          </button>
+          <button class="send stop" type="button" aria-label="توقف پاسخ" title="توقف" data-stop hidden>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5"/></svg>
+          </button>
+        </div>
+      </form>
+      {% if can_upload %}
+      <form method="post" enctype="multipart/form-data" data-upload-form hidden>{% csrf_token %}
+        <input type="hidden" name="action" value="upload">
+        <input type="file" name="file" accept=".txt,.md,text/plain,text/markdown" data-upload-input data-limit="262144">
+      </form>
+      {% endif %}
+      <p class="dock-note">پاسخ‌ها ممکن است خطا داشته باشند؛ موارد مهم را با منبع بررسی کنید.</p>
+    </div>
+  </main>
+</div>
+{% endblock %}

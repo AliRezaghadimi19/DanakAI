@@ -1,0 +1,7 @@
+{% extends "admin/base.html" %}
+{% load static %}
+{% block dark-mode-vars %}{% endblock %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'nexa-admin.css' %}">{% endblock %}
+{% block branding %}
+<a class="brand" href="{% url 'admin:index' %}">{% include "brand.html" %}</a>
+{% endblock %}

@@ -1,0 +1,23 @@
+services:
+  librechat:
+    image: registry.librechat.ai/librechat-ai/librechat-dev@sha256:9625652b9d9ac9fbf9ff3505fc34770f822c7aa079f58d06b4e66eed2dc93aeb
+    env_file:
+      - ./nexa/librechat.env
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3080
+      MONGO_URI: mongodb://librechat-mongo:27017/LibreChat
+      DOMAIN_CLIENT: http://localhost:3080
+      DOMAIN_SERVER: http://localhost:3080
+      SEARCH: "false"
+      APP_TITLE: Nexa AI
+    ports:
+      - "127.0.0.1:3080:3080"
+    depends_on:
+      - librechat-mongo
+  librechat-mongo:
+    image: mongo:8.0.20
+    volumes:
+      - librechat-db:/data/db
+volumes:
+  librechat-db:

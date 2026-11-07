@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}ورود به نکسا{% endblock %}
+{% block body_class %}login-page{% endblock %}
+{% block layout %}
+<main class="login">
+  <section class="login-story">
+    <div class="brand">{% include "brand.html" %}</div>
+    <div class="login-pitch">
+      <h1>پاسخ پرسش‌های کاری،<br>از دانش خود سازمان</h1>
+      <p>نکسا بر اساس اسناد منتشرشده و دسترسی حساب شما پاسخ می‌دهد و منبع هر پاسخ را نشان می‌دهد.</p>
+      <ul>
+        <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4 10-10"/></svg>پاسخ همراه با منبع سازمانی</li>
+        <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4 10-10"/></svg>محتوای محدود فقط برای گروه مجاز</li>
+        <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4 10-10"/></svg>ورود با حساب سازمانی</li>
+      </ul>
+    </div>
+    <small>نسخه داخلی</small>
+  </section>
+  <section class="login-entry">
+    <form class="login-form" method="post" novalidate>
+      {% csrf_token %}
+      <div>
+        <h2>ورود به نکسا</h2>
+        <p class="muted">با حساب سازمانی خود وارد شوید.</p>
+      </div>
+      {% if form.method.is_hidden %}
+      {{ form.method }}
+      {% else %}
+      <fieldset class="segmented">
+        <legend class="visually-hidden">{{ form.method.label }}</legend>
+        {% for choice in form.method %}
+        <label>{{ choice.tag }}<span>{{ choice.choice_label }}</span></label>
+        {% endfor %}
+      </fieldset>
+      {% endif %}
+      <div class="field">
+        <label for="{{ form.username.id_for_label }}">نام کاربری</label>
+        {{ form.username }}
+      </div>
+      <div class="field">
+        <label for="{{ form.password.id_for_label }}">گذرواژه</label>
+        {{ form.password }}
+      </div>
+      {% for error in form.non_field_errors %}
+      <p class="alert" role="alert"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/></svg>{{ error }}</p>
+      {% endfor %}
+      {% for field in form %}{% for error in field.errors %}
+      <p class="alert" role="alert"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/></svg>{{ field.label }}: {{ error }}</p>
+      {% endfor %}{% endfor %}
+      <input type="hidden" name="next" value="{{ next }}">
+      <button class="button primary">ورود</button>
+      <a class="text-link" href="{% url 'admin:login' %}">ورود مدیر سامانه</a>
+    </form>
+  </section>
+</main>
+{% endblock %}

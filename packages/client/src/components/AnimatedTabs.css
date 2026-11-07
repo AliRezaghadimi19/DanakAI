@@ -1,0 +1,82 @@
+/* AnimatedTabs.css */
+.animated-tab-panel {
+  transition-property: opacity, translate;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 300ms;
+  animation-duration: 300ms;
+}
+
+/* Sliding underline animation for tabs */
+.animated-tab-list {
+  position: relative;
+}
+
+.animated-tab-list::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  height: 2px;
+  background-color: currentColor; /* Inherit color from active tab */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  left: var(--tab-left, 0);
+  width: var(--tab-width, 0);
+}
+
+.animated-tab {
+  position: relative;
+}
+
+.animated-tab[data-state='active'] {
+  border-bottom-color: transparent !important;
+}
+
+.animated-tab-panel[data-enter] {
+  opacity: 1 !important;
+  translate: 0 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animated-tab-panel {
+    transition: none;
+  }
+}
+
+.animated-tab-panel:not([data-open]) {
+  position: absolute;
+  top: 0px;
+}
+
+.animated-panels:has(> [data-was-open]) > .animated-tab-panel {
+  opacity: 0;
+  translate: -100%;
+}
+
+.animated-panels [data-was-open] ~ .animated-tab-panel,
+.animated-panels [data-open] ~ .animated-tab-panel {
+  translate: 100%;
+}
+
+.animated-panels:dir(rtl):has(> [data-was-open]) > .animated-tab-panel {
+  translate: 100%;
+}
+
+.animated-panels:dir(rtl) [data-was-open] ~ .animated-tab-panel,
+.animated-panels:dir(rtl) [data-open] ~ .animated-tab-panel {
+  translate: -100%;
+}
+
+/* Chrome and Edge before 120 drop the `:dir()` rules; they read the nearest direction from the
+ * `--dir-fallback` property tokens.css sets on every `dir` attribute. A panel's container is
+ * `.animated-panels`, so the query reads the panels' direction. */
+@supports not selector(:dir(rtl)) {
+  @container style(--dir-fallback: rtl) {
+    .animated-panels:has(> [data-was-open]) > .animated-tab-panel:not([dir='ltr']) {
+      translate: 100%;
+    }
+
+    .animated-panels [data-was-open] ~ .animated-tab-panel:not([dir='ltr']),
+    .animated-panels [data-open] ~ .animated-tab-panel:not([dir='ltr']) {
+      translate: -100%;
+    }
+  }
+}

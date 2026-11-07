@@ -1,0 +1,24 @@
+services:
+  nexa:
+    build: ./nexa
+    ports:
+      - "127.0.0.1:8080:8080"
+    env_file:
+      - path: ./nexa/.env
+        required: false
+    environment:
+      NEXA_DATA_DIR: /data
+      NEXA_DEBUG: "0"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - nexa-data:/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health/')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+volumes:
+  nexa-data:
+
+name: nexa-ai-platform

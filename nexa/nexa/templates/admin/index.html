@@ -1,0 +1,102 @@
+{% extends "admin/base_site.html" %}
+{% load i18n tz dashboard %}
+{% block title %}داشبورد مدیریت | نکسا{% endblock %}
+{% block bodyclass %}{{ block.super }} nexa-admin-index{% endblock %}
+{% block breadcrumbs %}{% endblock %}
+{% block nav-sidebar %}{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+{% dashboard app_list as overview %}{% get_current_timezone as zone %}
+<div class="overview">
+  <nav class="overview-nav" aria-label="بخش‌های مدیریت">
+    <a href="#overview" aria-current="page">نمای کلی</a>
+    {% for section in overview.sections %}
+    <span class="overview-group">{{ section.title }}</span>
+    {% for item in section.links %}{% if item.admin_url %}<a href="{{ item.admin_url }}">{{ item.name }}</a>{% endif %}{% endfor %}
+    {% endfor %}
+    <a class="overview-workspace" href="{% url 'chat' %}">رفتن به دستیار <span aria-hidden="true">↗</span></a>
+  </nav>
+  <div class="overview-main" id="overview">
+    <header class="overview-heading">
+      <div><h1>نمای کلی سازمان</h1><p>وضعیت دانش، کاربران و اتصال‌ها در یک نگاه.</p></div>
+      {% if overview.knowledge_add %}<a class="overview-primary" href="{{ overview.knowledge_add }}"><span aria-hidden="true">+</span> افزودن به پایگاه دانش</a>{% endif %}
+    </header>
+    {% if overview.stats %}
+    <div class="overview-stats" aria-label="آمار سازمان">
+      {% for label, value, url in overview.stats %}
+      <a href="{{ url }}"><span>{{ label }}</span><strong>{{ value|persian_digits }}</strong></a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="overview-grid">
+      {% if overview.pending is not None and overview.knowledge_add %}
+      <section class="panel panel-wide" aria-labelledby="pending-heading">
+        <header><h2 id="pending-heading">در انتظار انتشار</h2><p>فایل‌ها و مدخل‌هایی که هنوز در پاسخ‌ها استفاده نمی‌شوند.</p></header>
+        {% if overview.pending %}
+        <div class="table-scroll">
+          <table class="plain">
+            <thead><tr><th scope="col">عنوان</th><th scope="col">فرستنده</th><th scope="col">دامنه</th><th scope="col"><span class="visually-hidden">اقدام</span></th></tr></thead>
+            <tbody>
+              {% for item in overview.pending %}
+              <tr>
+                <td dir="auto">{{ item.title }}</td>
+                <td dir="auto">{{ item.user|default:"مدیر" }}</td>
+                <td>{% if item.group %}گروه {{ item.group }}{% elif item.user %}فقط فرستنده{% else %}همه{% endif %}</td>
+                <td class="row-actions">
+                  <a href="{% url 'admin:nexa_knowledge_change' item.pk %}">بررسی</a>
+                  <form method="post" action="{% url 'admin:nexa_knowledge_publish' item.pk %}">{% csrf_token %}<button>انتشار</button></form>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="panel-empty">موردی در انتظار انتشار نیست.</p>
+        {% endif %}
+      </section>
+      {% endif %}
+
+      {% if overview.integrations %}
+      <section class="panel" aria-labelledby="health-heading">
+        <header><h2 id="health-heading">وضعیت اتصال‌ها</h2>
+          <p>{% if overview.checked_at %}آخرین آزمون: <time datetime="{{ overview.checked_at }}">{{ overview.checked_at }}</time>{% else %}هنوز آزمونی اجرا نشده است.{% endif %}</p>
+        </header>
+        <ul class="health">
+          {% for check in overview.integrations %}
+          <li class="is-{{ check.state }}"><span class="dot" aria-hidden="true"></span><div><strong dir="auto">{{ check.name }}</strong><small>{{ check.detail }}</small></div></li>
+          {% endfor %}
+        </ul>
+        <form method="post" action="{% url 'check-integrations' %}">{% csrf_token %}<button class="panel-button">آزمون اتصال</button></form>
+      </section>
+      {% endif %}
+
+      {% if overview.recent %}
+      <section class="panel{% if not overview.integrations %} panel-wide{% endif %}" aria-labelledby="recent-heading">
+        <header><h2 id="recent-heading">فعالیت اخیر</h2><p>آخرین پرسش‌ها و بارگذاری‌ها.</p></header>
+        <ul class="activity">
+          {% for event in overview.recent %}
+          <li>
+            <span class="badge is-{{ event.status }}">{{ event.get_status_display }}</span>
+            <div><span><strong dir="auto">{{ event.actor }}</strong> · {{ event.get_kind_display }}</span><small dir="auto">{{ event.question|truncatechars:70 }}</small></div>
+            <time datetime="{{ event.created_at|date:'c' }}">{{ event.created_at|date:"Y/m/d H:i" }}</time>
+          </li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endif %}
+    </div>
+    {% if not overview.sections %}<p>{% translate "You don’t have permission to view or edit anything." %}</p>{% endif %}
+  </div>
+</div>
+<script>
+(() => {
+  const format = new Intl.DateTimeFormat('fa-IR-u-ca-persian', { dateStyle: 'medium', timeStyle: 'short', timeZone: '{{ zone|escapejs }}' });
+  for (const time of document.querySelectorAll('.overview time[datetime]')) {
+    const value = new Date(time.dateTime);
+    if (!Number.isNaN(value.getTime())) time.textContent = format.format(value);
+  }
+})();
+</script>
+{% endblock %}

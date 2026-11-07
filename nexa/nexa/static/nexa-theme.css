@@ -1,0 +1,38 @@
+@font-face {
+  font-family: Vazirmatn;
+  src: url("fonts/Vazirmatn.woff2") format("woff2");
+  font-display: swap;
+}
+:root {
+  --nexa-font: Vazirmatn, Tahoma, system-ui, sans-serif;
+  --ink: #14232b;
+  --ink-soft: #2c4049;
+  --muted: #5a6d77;
+  --canvas: #f4f7f6;
+  --paper: #fff;
+  --sunken: #e9f0ee;
+  --hover: #eef4f2;
+  --line: #e1e9e7;
+  --line-strong: #cfdcd8;
+  --accent: #0b6b5a;
+  --accent-hover: #08513f;
+  --accent-ink: #07493d;
+  --mint: #ddf3ec;
+  --glow: #9befd8;
+  --deep: #0f2a30;
+  --focus: #5b9f94;
+  --focus-soft: #0b6b5a26;
+  --danger: #8a2a22;
+  --danger-soft: #fdeeeb;
+  --warning: #7a5200;
+  --warning-soft: #fff4dc;
+  --shadow: 0 6px 20px #14232b0d;
+}
+.brand-mark {
+  display: grid; width: 2.5rem; height: 2.5rem; flex: 0 0 2.5rem; place-items: center;
+  color: var(--deep); background: var(--glow); border-radius: .75rem;
+}
+.brand-mark svg { width: 1.25rem; height: 1.25rem; }
+.brand-text { display: grid; line-height: 1.35; }
+.brand-text strong { font-size: 1.15rem; font-weight: 800; }
+.brand-text small { font-size: .72rem; opacity: .8; }

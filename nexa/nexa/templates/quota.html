@@ -1,0 +1,14 @@
+    <section class="quota" data-quota aria-label="سهمیه پرسش">
+      {% for label, remaining, end, limit in allowance %}
+      <div class="quota-row">
+        <div class="quota-line">
+          <span>سهمیه {{ label }}</span>
+          <strong>{% if remaining is None %}نامحدود{% else %}<span data-number="{{ remaining|stringformat:'d' }}">{{ remaining }}</span>{% if limit %} از <span data-number="{{ limit|stringformat:'d' }}">{{ limit }}</span>{% endif %}{% endif %}</strong>
+        </div>
+        {% if remaining is not None and limit %}
+        <div class="meter" role="progressbar" aria-label="سهمیه {{ label }} باقی‌مانده" aria-valuemin="0" aria-valuemax="{{ limit }}" aria-valuenow="{{ remaining }}"><span style="width: {% widthratio remaining limit 100 %}%"></span></div>
+        {% endif %}
+        <small>بازنشانی <time datetime="{{ end|date:'c' }}">{{ end|date:"Y/m/d H:i" }}</time></small>
+      </div>
+      {% endfor %}
+    </section>
